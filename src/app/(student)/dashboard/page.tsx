@@ -1,9 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Home, User, CheckCircle, Users, Star, Coins, Megaphone, Building, Info, FileText, Lock } from 'lucide-react'
+import { Home, User, CheckCircle, Users, Star, Megaphone, Info, FileText, Lock } from 'lucide-react'
 import type { Metadata } from 'next'
-import { cookies } from 'next/headers'
 
 export const metadata: Metadata = { title: 'Dashboard | Nova Unplugged' }
 

@@ -125,7 +125,7 @@ export default function HomePage() {
               marginLeft: '0.15em',
             }}
           >
-            '26
+            &apos;26
           </span>
         </div>
 

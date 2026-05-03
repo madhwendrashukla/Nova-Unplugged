@@ -1,7 +1,6 @@
-'use client'
-
 import Link from 'next/link'
 import ParticleCrowd from '@/components/visuals/ThreeCrowd'
+import { createClient } from '@/lib/supabase/server'
 
 /* ─── Spinning Pinwheel O ─────────────────────── */
 function PinwheelO() {
@@ -44,7 +43,10 @@ function PinwheelO() {
 }
 
 /* ─── Main Page ───────────────────────────────── */
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <div
       className="relative w-screen h-screen overflow-hidden flex flex-col items-center justify-center"
@@ -165,26 +167,36 @@ export default function HomePage() {
 
         {/* CTAs */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginTop: '2.2rem' }}>
-          <Link href="/register" className="glass-cta-btn">
-            <span className="glass-cta-shine" />
-            <span style={{ position: 'relative', zIndex: 1, fontWeight: 900, letterSpacing: '0.25em', fontSize: 'clamp(0.7rem, 1.4vw, 0.9rem)' }}>
-              REGISTER NOW
-            </span>
-          </Link>
-          <Link
-            href="/login"
-            style={{
-              color: 'rgba(253,164,175,0.5)',
-              fontSize: '0.72rem',
-              letterSpacing: '0.4em',
-              textTransform: 'uppercase',
-              fontWeight: 600,
-              transition: 'color 0.3s',
-            }}
-          >
-            Log In
-          </Link>
-
+          {user ? (
+            <Link href="/dashboard" className="glass-cta-btn">
+              <span className="glass-cta-shine" />
+              <span style={{ position: 'relative', zIndex: 1, fontWeight: 900, letterSpacing: '0.25em', fontSize: 'clamp(0.7rem, 1.4vw, 0.9rem)' }}>
+                ENTER TO NOVA!!
+              </span>
+            </Link>
+          ) : (
+            <>
+              <Link href="/register" className="glass-cta-btn">
+                <span className="glass-cta-shine" />
+                <span style={{ position: 'relative', zIndex: 1, fontWeight: 900, letterSpacing: '0.25em', fontSize: 'clamp(0.7rem, 1.4vw, 0.9rem)' }}>
+                  REGISTER NOW
+                </span>
+              </Link>
+              <Link
+                href="/login"
+                style={{
+                  color: 'rgba(253,164,175,0.5)',
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.4em',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                  transition: 'color 0.3s',
+                }}
+              >
+                Log In
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>

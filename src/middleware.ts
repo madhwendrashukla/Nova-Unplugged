@@ -124,7 +124,6 @@ export async function middleware(request: NextRequest) {
 
   // ─── Level 2: Volunteer — scanner only ───────────────────────────────────
   if (roleLevel === 2) {
-    if (pathname === '/') return redirect('/dashboard')
     if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/scanner')) {
       return redirect('/admin/scanner')
     }
@@ -133,9 +132,6 @@ export async function middleware(request: NextRequest) {
 
   // ─── Level 1: Student — payment gate ─────────────────────────────────────
   // Redirect base URL to dashboard for regular users
-  if (pathname === '/') {
-    return redirect('/dashboard')
-  }
 
   if (paymentStatus !== 'approved') {
     if (!pathname.startsWith('/payment')) return redirect('/payment')

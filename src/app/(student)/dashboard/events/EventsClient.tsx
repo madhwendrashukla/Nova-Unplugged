@@ -404,7 +404,7 @@ export function EventsClient({
   const [consentChecked, setConsentChecked] = useState(false)
 
   // Merged My Events state and transition functions
-  const [activeTab, setActiveTab] = useState<'all' | 'my'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'my' | 'submissions'>('all')
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
   const [showLeaderPanel, setShowLeaderPanel] = useState<string | null>(null)
   const [leaderRequests, setLeaderRequests] = useState<any[]>([])
@@ -416,6 +416,8 @@ export function EventsClient({
       const params = new URLSearchParams(window.location.search)
       if (params.get('tab') === 'my-events') {
         setActiveTab('my')
+      } else if (params.get('tab') === 'submissions') {
+        setActiveTab('submissions')
       }
     }
   }, [])
@@ -668,6 +670,46 @@ export function EventsClient({
                 </span>
               )}
             </button>
+            <button
+              onClick={() => {
+                setActiveTab('submissions')
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState({}, '', '/dashboard/events?tab=submissions')
+                }
+              }}
+              className={`px-8 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${
+                activeTab === 'submissions'
+                  ? 'bg-gradient-to-r from-[#E8A020] to-[#F0A500] text-white shadow-lg shadow-[#E8A020]/20'
+                  : 'text-white/65 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              Submissions
+            </button>
+          </div>
+        </div>
+      )}
+
+      {view !== 'search' && activeTab === 'submissions' && (
+        <div className="px-6 py-6 max-w-4xl mx-auto relative z-10 w-full">
+          <div className="mb-8 text-center">
+            <h2 className="font-display font-black text-3xl uppercase tracking-wider text-white">Event Submissions</h2>
+            <p className="text-white/40 text-sm mt-1">Submit your work for events here</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+            <div
+              className="w-full h-full relative transition-all duration-500 hover:scale-[1.02] hover:z-30 cursor-pointer"
+              onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdE-wcWd8zEH4tJ16RERVC3HIiPPeRf3AVKPfoHeFYnmE_ZnA/viewform?usp=publish-editor', '_blank')}
+            >
+              <PinnedCard pinColor="orange" className="h-full min-h-[250px] flex flex-col justify-center items-center text-center p-6 gap-4">
+                <span className="text-5xl">📷</span>
+                <h3 className="font-display font-black text-xl uppercase tracking-wider text-white leading-tight">
+                  Through the Lens : Photography Submission
+                </h3>
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#E8A020] transition-all duration-300 uppercase tracking-widest mt-2">
+                  Submit Now <ExternalLink size={14} />
+                </span>
+              </PinnedCard>
+            </div>
           </div>
         </div>
       )}

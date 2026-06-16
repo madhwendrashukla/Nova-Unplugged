@@ -631,8 +631,8 @@ export function EventsClient({
     <>
       {/* Tabs Selector */}
       {view !== 'search' && (
-        <div className="flex justify-center mt-1 mb-4 relative z-10">
-          <div className="flex bg-black/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/10">
+        <div className="flex justify-center mt-1 mb-4 relative z-10 w-full px-2 sm:px-4">
+          <div className="flex bg-black/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 overflow-x-auto hide-scrollbar max-w-full">
             <button
               onClick={() => {
                 setActiveTab('all')
@@ -642,7 +642,7 @@ export function EventsClient({
                   window.history.replaceState({}, '', '/dashboard/events')
                 }
               }}
-              className={`px-8 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${
+              className={`whitespace-nowrap px-4 sm:px-8 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all duration-300 ${
                 activeTab === 'all'
                   ? 'bg-gradient-to-r from-[#E8A020] to-[#F0A500] text-white shadow-lg shadow-[#E8A020]/20'
                   : 'text-white/65 hover:text-white hover:bg-white/5'
@@ -657,7 +657,7 @@ export function EventsClient({
                   window.history.replaceState({}, '', '/dashboard/events?tab=my-events')
                 }
               }}
-              className={`px-8 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 ${
+              className={`whitespace-nowrap px-4 sm:px-8 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 ${
                 activeTab === 'my'
                   ? 'bg-gradient-to-r from-[#E8A020] to-[#F0A500] text-white shadow-lg shadow-[#E8A020]/20'
                   : 'text-white/65 hover:text-white hover:bg-white/5'
@@ -665,7 +665,7 @@ export function EventsClient({
             >
               My Registrations
               {registrations.length > 0 && (
-                <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-md font-black">
+                <span className="bg-white/20 text-white text-[10px] sm:text-xs px-2 py-0.5 rounded-md font-black">
                   {registrations.length}
                 </span>
               )}
@@ -677,7 +677,7 @@ export function EventsClient({
                   window.history.replaceState({}, '', '/dashboard/events?tab=submissions')
                 }
               }}
-              className={`px-8 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all duration-300 ${
+              className={`whitespace-nowrap px-4 sm:px-8 py-2.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all duration-300 ${
                 activeTab === 'submissions'
                   ? 'bg-gradient-to-r from-[#E8A020] to-[#F0A500] text-white shadow-lg shadow-[#E8A020]/20'
                   : 'text-white/65 hover:text-white hover:bg-white/5'

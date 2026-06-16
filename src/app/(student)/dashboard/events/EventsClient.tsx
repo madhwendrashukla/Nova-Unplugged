@@ -248,6 +248,16 @@ export function EventsClient({
               <div className="flex gap-3 flex-wrap">
                 {selectedEvent.rulebook_url && <a href={selectedEvent.rulebook_url} target="_blank" rel="noreferrer" className="nova-btn-outline text-sm px-4 py-2 rounded-lg flex items-center gap-2"><BookOpen size={14} /> Rulebook</a>}
                 {selectedEvent.group_join_link && <a href={selectedEvent.group_join_link} target="_blank" rel="noreferrer" className="nova-btn-accent text-sm px-4 py-2 rounded-lg flex items-center gap-2 text-white"><ExternalLink size={14} /> Join WhatsApp Group</a>}
+                {selectedEvent.title.toLowerCase().includes('photography') && (
+                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSdE-wcWd8zEH4tJ16RERVC3HIiPPeRf3AVKPfoHeFYnmE_ZnA/viewform?usp=publish-editor" target="_blank" rel="noreferrer" className="bg-nova-primary text-black font-semibold text-sm px-4 py-2 rounded-lg flex items-center gap-2 shadow-[0_0_15px_rgba(var(--nova-primary-rgb),0.3)] hover:bg-nova-primary/90 transition-all">
+                    <ExternalLink size={14} /> Submit Photography Entry
+                  </a>
+                )}
+                {(selectedEvent as any).submission_link && !selectedEvent.title.toLowerCase().includes('photography') && (
+                  <a href={(selectedEvent as any).submission_link} target="_blank" rel="noreferrer" className="bg-nova-primary text-black font-semibold text-sm px-4 py-2 rounded-lg flex items-center gap-2 shadow-[0_0_15px_rgba(var(--nova-primary-rgb),0.3)] hover:bg-nova-primary/90 transition-all">
+                    <ExternalLink size={14} /> Submission Link
+                  </a>
+                )}
               </div>
               {actionError && <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">⚠ {actionError}</div>}
 

@@ -7,6 +7,7 @@ import { Input, Select } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Mail, User, Phone, MapPin, Hash, ShieldCheck, ArrowRight, ArrowLeft, Check, Users, School } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { checkAllowedEmail, approveUserPaymentStatus, checkIfUserExists, fetchPincodeInfo } from './actions'
 
 type UserType = 'iimb_student' | 'iimb_faculty'
 
@@ -36,6 +37,7 @@ export default function RegisterPage() {
   const [pincodeLoading, setPincodeLoading] = useState(false)
   const [step, setStep] = useState<'form' | 'otp'>('form')
   const [otp, setOtp] = useState('')
+  const [registeredGmail, setRegisteredGmail] = useState('')
 
   const [form, setForm] = useState({
     fullName: '',
@@ -60,11 +62,9 @@ export default function RegisterPage() {
       const fetchLocation = async () => {
         setPincodeLoading(true)
         try {
-          const res = await fetch(`https://api.postalpincode.in/pincode/${form.pincode}`)
-          const data = await res.json()
-          if (data[0].Status === 'Success') {
-            const { District, State } = data[0].PostOffice[0]
-            setForm(f => ({ ...f, city: District, state: State }))
+          const data = await fetchPincodeInfo(form.pincode)
+          if (data.success && data.city && data.state) {
+            setForm(f => ({ ...f, city: data.city, state: data.state }))
             setError(null)
           } else {
             setError('Invalid Pincode')
@@ -82,6 +82,7 @@ export default function RegisterPage() {
   const validate = () => {
     if (!form.fullName.trim()) return 'Full name is required'
     if (!form.email.includes('@')) return 'Enter a valid email address'
+    if (!form.email.toLowerCase().endsWith('@iimb.ac.in')) return 'Email must end with @iimb.ac.in'
     if (form.password.length < 6) return 'Password must be at least 6 characters'
     if (form.password !== form.confirmPassword) return 'Passwords do not match'
     
@@ -104,9 +105,28 @@ export default function RegisterPage() {
     startTransition(async () => {
       try {
         console.log('Starting signup for:', form.email)
+
+        const userExists = await checkIfUserExists(form.email)
+        if (userExists) {
+          setError('Already registered! Please login instead.')
+          return
+        }
+
+        const { allowed, gmail } = await checkAllowedEmail(form.email)
+        if (!allowed) {
+          setError('Your payment is not yet confirmed, please wait if you have paid, and pay if you have not paid for the events.')
+          return
+        }
+
+        if (!gmail) {
+          setError('No Gmail address found in the allowed list. Please contact the admin.')
+          return
+        }
+        setRegisteredGmail(gmail)
+
         const supabase = createClient()
         const { data, error: supaErr } = await supabase.auth.signUp({
-          email: form.email,
+          email: gmail,
           password: form.password,
           options: {
             data: {
@@ -118,6 +138,7 @@ export default function RegisterPage() {
               batch:      form.batch,
               zone:       form.zone,
               user_type:  userType,
+              iimb_email: form.email,
             },
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
@@ -150,9 +171,13 @@ export default function RegisterPage() {
 
     startTransition(async () => {
       try {
+        // Need to verify OTP against the Gmail that was used to sign up
+        const { allowed, gmail } = await checkAllowedEmail(form.email)
+        if (!allowed || !gmail) throw new Error('Gmail not found for verification')
+
         const supabase = createClient()
-        const { error: supaErr } = await supabase.auth.verifyOtp({
-          email: form.email,
+        const { data, error: supaErr } = await supabase.auth.verifyOtp({
+          email: gmail,
           token: otp,
           type: 'signup',
         })
@@ -160,9 +185,13 @@ export default function RegisterPage() {
         if (supaErr) {
           setError(supaErr.message)
         } else {
-          // Verification successful, redirect to dashboard or payment
-          router.push('/dashboard')
-          router.refresh()
+          if (data?.user?.id) {
+            await approveUserPaymentStatus(data.user.id)
+          }
+          // Use window.location.href instead of router.push to force a hard reload
+          // This prevents Next.js client-side routing glitches (like the URL getting stuck on /login)
+          // and guarantees the middleware sees the newly set session cookie immediately.
+          window.location.href = '/dashboard'
         }
       } catch (err: any) {
         setError(err.message || 'An error occurred during verification.')
@@ -171,39 +200,48 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
-      <div className="absolute inset-0 animated-bg" />
-      <div className="absolute inset-0 dots-bg opacity-30" />
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden bg-nova-bg">
+      {/* Ambient glowing orbs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 -right-1/4 w-[50vw] h-[50vw] bg-nova-primary/15 rounded-full blur-[130px] mix-blend-screen animate-pulse" />
+        <div className="absolute bottom-1/4 -left-1/4 w-[40vw] h-[40vw] bg-nova-accent/10 rounded-full blur-[110px] mix-blend-screen" />
+      </div>
+      <div className="absolute inset-0 mesh-bg opacity-30" />
       
-      <div className="relative z-10 w-full max-w-xl">
-        <div className="text-center mb-6">
-          <h1 className="font-display font-bold text-3xl gradient-text mb-2">Create Account</h1>
-          <p className="text-nova-text-dim text-sm">Join Nova Unplugged 2025</p>
+      <div className="relative z-10 w-full max-w-xl entrance-1">
+        <div className="text-center mb-8">
+          <h1 className="font-display font-black text-4xl sm:text-5xl gradient-text mb-2 tracking-tight">Create Account</h1>
+          <p className="text-nova-text-dim text-lg">Join the most electric fest of 2026</p>
         </div>
 
         {step === 'form' ? (
           <>
             {/* User Type Toggle */}
-            <div className="flex bg-white/5 p-1 rounded-xl mb-8 border border-white/10 max-w-xs mx-auto">
+            <div className="flex bg-white/5 p-1.5 rounded-2xl mb-8 border border-white/10 max-w-xs mx-auto backdrop-blur-md relative entrance-2">
               <button
+                type="button"
                 onClick={() => setUserType('iimb_student')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold transition-all ${
-                  userType === 'iimb_student' ? 'bg-nova-primary text-white shadow-glow-sm' : 'text-nova-text-dim hover:text-nova-text'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 relative z-10 ${
+                  userType === 'iimb_student' ? 'text-white' : 'text-nova-text-dim hover:text-nova-text'
                 }`}
               >
-                <Users size={16} /> Student
+                {userType === 'iimb_student' && <span className="absolute inset-0 bg-nova-primary rounded-xl shadow-glow-sm animate-entrance pointer-events-none" />}
+                <Users size={16} className="relative z-10" /> <span className="relative z-10">Student</span>
               </button>
               <button
+                type="button"
                 onClick={() => setUserType('iimb_faculty')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold transition-all ${
-                  userType === 'iimb_faculty' ? 'bg-nova-primary text-white shadow-glow-sm' : 'text-nova-text-dim hover:text-nova-text'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold transition-all duration-300 relative z-10 ${
+                  userType === 'iimb_faculty' ? 'text-white' : 'text-nova-text-dim hover:text-nova-text'
                 }`}
               >
-                <School size={16} /> Staff/Faculty
+                {userType === 'iimb_faculty' && <span className="absolute inset-0 bg-nova-primary rounded-xl shadow-glow-sm animate-entrance pointer-events-none" />}
+                <School size={16} className="relative z-10" /> <span className="relative z-10">Faculty</span>
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="glass-dark rounded-2xl p-8 border border-nova-primary/30 shadow-2xl">
+            <form onSubmit={handleSubmit} className="nova-card p-8 border border-nova-primary/30 shadow-2xl relative group entrance-3">
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-nova-primary/40 shadow-[0_0_40px_rgba(232, 160, 32,0.1)]" />
               {error && (
                 <div className="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
                   ⚠ {error}
@@ -220,9 +258,9 @@ export default function RegisterPage() {
                   required
                 />
                 <Input
-                  label="Email Address"
+                  label="IIMB Email Address"
                   type="email"
-                  placeholder="email@example.com"
+                  placeholder="student@iimb.ac.in"
                   icon={<Mail size={16} />}
                   value={form.email}
                   onChange={set('email')}
@@ -304,51 +342,61 @@ export default function RegisterPage() {
                 />
               </div>
 
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                fullWidth
-                loading={isPending}
-                className="mt-8"
-              >
-                {isPending ? 'Creating Account...' : 'Register Now'}
-              </Button>
+              <div className="entrance-5">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  loading={isPending}
+                  className="mt-8 group relative overflow-hidden h-14 rounded-xl font-black text-lg tracking-wider"
+                >
+                  <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  {isPending ? 'Processing...' : 'Register Now'}
+                </Button>
+              </div>
             </form>
           </>
         ) : (
-          <div className="glass-dark rounded-2xl p-8 border border-nova-primary/30 shadow-2xl animate-slide-up">
-            <h2 className="text-nova-text font-semibold text-center mb-2 text-xl">
-              Verify Your Email
-            </h2>
-            <p className="text-nova-muted text-sm text-center mb-6">
-              We&apos;ve sent a 6-digit code to <strong>{form.email}</strong>
-            </p>
-            {error && (
-              <div className="mb-6 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-2">
-                ⚠ {error}
-              </div>
-            )}
-            <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5">
-              <Input
-                label="6-Digit OTP"
-                placeholder="123456"
-                value={otp}
-                onChange={e => setOtp(e.target.value)}
-                icon={<ShieldCheck size={16} />}
-                maxLength={6}
-                required
-              />
-              <Button type="submit" variant="primary" fullWidth loading={isPending}>
-                Verify Account
-              </Button>
-            </form>
-            <button
-              onClick={() => setStep('form')}
-              className="text-nova-muted text-xs hover:text-nova-text text-center w-full mt-4"
-            >
-              Back to Registration
-            </button>
+          <div className="nova-card p-10 border border-nova-primary/30 shadow-2xl animate-entrance relative overflow-hidden group">
+            <div className="absolute inset-0 bg-nova-primary/10 blur-[80px] opacity-40 group-hover:opacity-60 transition-opacity" />
+            <div className="relative z-10">
+              <h2 className="text-nova-text font-black text-center mb-2 text-3xl gradient-text">
+                Verify Your Identity
+              </h2>
+              <p className="text-nova-text-dim text-base text-center mb-8">
+                We&apos;ve sent a secure 6-digit code to your <br/>
+                <strong className="text-nova-primary">
+                  {registeredGmail ? registeredGmail : 'associated Google mail id'}
+                </strong>
+              </p>
+              {error && (
+                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-center gap-3">
+                  ⚠ {error}
+                </div>
+              )}
+              <form onSubmit={handleVerifyOtp} className="flex flex-col gap-6">
+                <Input
+                  label="Enter 6-Digit Code"
+                  placeholder="123456"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value)}
+                  icon={<ShieldCheck size={20} />}
+                  maxLength={6}
+                  required
+                  className="text-center text-2xl tracking-[0.5em] font-black py-4"
+                />
+                <Button type="submit" variant="primary" size="lg" fullWidth loading={isPending} className="h-14 rounded-xl font-bold text-lg">
+                  Verify & Activate Account
+                </Button>
+              </form>
+              <button
+                onClick={() => setStep('form')}
+                className="text-nova-muted text-sm hover:text-nova-text text-center w-full mt-6 flex items-center justify-center gap-2 transition-colors"
+              >
+                <ArrowLeft size={16} /> Incorrect email? Go back
+              </button>
+            </div>
           </div>
         )}
 

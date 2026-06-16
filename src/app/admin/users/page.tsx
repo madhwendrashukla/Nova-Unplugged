@@ -26,5 +26,13 @@ export default async function AdminUsersPage() {
     supabase.from('user_types').select('*'),
   ])
 
-  return <AdminUsersClient users={users || []} roles={roles || []} types={types || []} myLevel={myLevel} />
+  return (
+    <AdminUsersClient
+      users={users || []}
+      roles={roles || []}
+      types={types || []}
+      myLevel={myLevel}
+      myEmail={user.email || ''}
+    />
+  )
 }

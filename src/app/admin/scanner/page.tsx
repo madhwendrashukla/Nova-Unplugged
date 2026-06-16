@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'QR Scanner | Nova Unplugged Gate',
-  description: 'Gate entry scanner for Nova Unplugged 2025.',
+  description: 'Gate entry scanner for Nova Unplugged 2026.',
 }
 
 export default async function ScannerPage() {

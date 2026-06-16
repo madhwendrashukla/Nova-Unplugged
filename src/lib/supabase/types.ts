@@ -144,6 +144,7 @@ export interface Database {
           end_time: string | null
           deadline: string | null
           is_active: boolean
+          is_submission_based: boolean
           created_by: string | null
           created_at: string
         }
@@ -166,6 +167,7 @@ export interface Database {
           end_time?: string | null
           deadline?: string | null
           is_active?: boolean
+          is_submission_based?: boolean
           created_by?: string | null
           created_at?: string
         }
@@ -187,6 +189,7 @@ export interface Database {
           end_time?: string | null
           deadline?: string | null
           is_active?: boolean
+          is_submission_based?: boolean
         }
       }
       teams: {
@@ -259,6 +262,7 @@ export interface Database {
           user_id: string
           event_id: string
           team_id: string | null
+          submission_link: string | null
           created_at: string
         }
         Insert: {
@@ -266,9 +270,10 @@ export interface Database {
           user_id: string
           event_id: string
           team_id?: string | null
+          submission_link?: string | null
           created_at?: string
         }
-        Update: { id?: string }
+        Update: { id?: string; submission_link?: string | null }
       }
       announcements: {
         Row: {

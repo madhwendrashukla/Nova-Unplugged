@@ -81,27 +81,27 @@ export function AdminAnnouncementsClient({ announcements, creatorId }: { announc
       </div>
 
       <div className="glass rounded-2xl border border-nova-primary/20 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-nova-bg/50 border-b border-white/10 text-nova-muted font-display tracking-wider text-xs uppercase">
+        <div className="overflow-x-hidden md:overflow-x-auto">
+          <table className="w-full text-left text-sm block md:table">
+            <thead className="hidden md:table-header-group bg-nova-bg/50 border-b border-white/10 text-nova-muted font-display tracking-wider text-xs uppercase">
               <tr>
                 <th className="p-4 font-medium">Title & Target</th>
                 <th className="p-4 font-medium">Date & Author</th>
                 <th className="p-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-nova-text">
+            <tbody className="divide-y divide-white/5 text-nova-text block md:table-row-group">
               {announcements.map((a: Announcement) => (
-                <tr key={a.id} className="hover:bg-white/5 transition-colors group">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
+                <tr key={a.id} className="hover:bg-white/5 transition-colors group block md:table-row py-2 md:py-0 relative">
+                  <td className="p-4 block md:table-cell">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       {a.image_url && (
-                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/5 border border-white/10 shrink-0">
+                        <div className="w-full sm:w-16 h-32 sm:h-12 rounded-lg overflow-hidden bg-white/5 border border-white/10 shrink-0">
                           <img src={a.image_url} alt="" className="w-full h-full object-cover" />
                         </div>
                       )}
-                      <div>
-                        <p className="font-medium text-nova-text truncate max-w-sm">{a.title}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-nova-text break-words line-clamp-2">{a.title}</p>
                         {a.target_audience ? (
                           <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] bg-nova-primary/10 text-nova-primary border border-nova-primary/20 font-medium">
                             Target: {a.target_audience}
@@ -114,17 +114,19 @@ export function AdminAnnouncementsClient({ announcements, creatorId }: { announc
                       </div>
                     </div>
                   </td>
-                  <td className="p-4">
-                    <p className="text-nova-text flex items-center gap-1.5"><Calendar size={13} className="text-nova-muted" />{formatIST(a.created_at, 'MMM d, h:mm a')}</p>
-                    <p className="text-nova-muted text-xs mt-1">by {a.users?.full_name}</p>
+                  <td className="px-4 pb-2 md:p-4 block md:table-cell">
+                    <div className="flex flex-col">
+                      <p className="text-nova-text flex items-center gap-1.5 text-xs md:text-sm"><Calendar size={13} className="text-nova-muted" />{formatIST(a.created_at, 'MMM d, h:mm a')}</p>
+                      <p className="text-nova-muted text-[10px] md:text-xs mt-1">by {a.users?.full_name}</p>
+                    </div>
                   </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleOpenEdit(a)} className="p-2 text-nova-muted hover:text-nova-primary bg-white/5 hover:bg-nova-primary/10 rounded-lg transition-all">
-                        <Pencil size={14} />
+                  <td className="px-4 pb-4 md:p-4 text-left md:text-right block md:table-cell md:absolute right-0 top-1/2 md:-translate-y-1/2 static">
+                    <div className="flex items-center justify-start md:justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity mt-2 md:mt-0">
+                      <button onClick={() => handleOpenEdit(a)} className="p-2 text-nova-muted hover:text-nova-primary bg-white/5 hover:bg-nova-primary/10 rounded-lg transition-all flex items-center gap-2 md:gap-0">
+                        <Pencil size={14} /> <span className="md:hidden text-xs">Edit</span>
                       </button>
-                      <button onClick={() => handleDelete(a.id)} className="p-2 text-nova-muted hover:text-red-400 bg-white/5 hover:bg-red-500/10 rounded-lg transition-all">
-                        <Trash2 size={14} />
+                      <button onClick={() => handleDelete(a.id)} className="p-2 text-nova-muted hover:text-red-400 bg-white/5 hover:bg-red-500/10 rounded-lg transition-all flex items-center gap-2 md:gap-0">
+                        <Trash2 size={14} /> <span className="md:hidden text-xs">Delete</span>
                       </button>
                     </div>
                   </td>

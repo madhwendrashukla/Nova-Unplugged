@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { Bell, Filter } from 'lucide-react'
 import type { Metadata } from 'next'
 import { AnnouncementsClient } from './AnnouncementsClient'
+import { PageWrapper } from '@/components/layout/PageWrapper'
+import { LiveUpdatesHeading } from '@/components/ui/CustomHeadings'
 
-export const metadata: Metadata = { title: 'Announcements | Nova Unplugged 2025' }
+export const metadata: Metadata = { title: 'Announcements | Nova Unplugged 2026' }
 
 export default async function AnnouncementsPage(props: { searchParams: Promise<{ filter?: string, page?: string }> }) {
   const searchParams = await props.searchParams;
@@ -43,18 +45,15 @@ export default async function AnnouncementsPage(props: { searchParams: Promise<{
   const totalPages = Math.ceil((count || 0) / pageSize)
 
   return (
-    <div className="min-h-screen p-6 lg:p-8 max-w-4xl mx-auto">
-      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display font-bold text-3xl text-nova-text flex items-center gap-3">
-            <Bell size={28} className="text-nova-warning" /> Announcements
-          </h1>
-          <p className="text-nova-text-dim text-sm mt-1">Stay updated with the latest news and alerts.</p>
-        </div>
-
+    <PageWrapper
+      headingComponent={<LiveUpdatesHeading />}
+      subtitle="Stay updated with the latest news and alerts"
+      maxWidth="md"
+    >
+      <div className="flex flex-col gap-6 w-full">
         {/* Filters */}
-        <div className="flex items-center gap-2 bg-nova-bg glass rounded-lg p-1 border border-nova-primary/20 self-start md:self-auto">
-          <Filter size={14} className="text-nova-muted ml-2 mr-1" />
+        <div className="flex items-center gap-2 bg-[#0c0d10]/40 backdrop-blur p-1 rounded-2xl border border-white/10 self-center mb-6">
+          <Filter size={14} className="text-white/40 ml-3 mr-1" />
           {[
             { value: 'all', label: 'All Time' },
             { value: 'today', label: 'Today' },
@@ -64,28 +63,32 @@ export default async function AnnouncementsPage(props: { searchParams: Promise<{
             <Link
               key={f.value}
               href={`/dashboard/announcements?filter=${f.value}&page=1`}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${filter === f.value ? 'bg-nova-primary/20 text-nova-primary' : 'text-nova-text-dim hover:text-nova-text hover:bg-white/5'}`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                filter === f.value 
+                  ? 'bg-gradient-to-r from-[#E8A020] to-[#F0A500] text-white shadow-sm' 
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
             >
               {f.label}
             </Link>
           ))}
         </div>
-      </div>
 
-      {announcements.length > 0 ? (
-        <AnnouncementsClient 
-          announcements={announcements} 
-          filter={filter} 
-          page={page} 
-          totalPages={totalPages} 
-        />
-      ) : (
-        <div className="text-center py-20 glass rounded-2xl border border-white/5">
-          <Bell size={40} className="text-nova-muted mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-nova-text">No announcements found</h3>
-          <p className="text-nova-text-dim text-sm mt-1">Try changing your filters or check back later.</p>
-        </div>
-      )}
-    </div>
+        {announcements.length > 0 ? (
+          <AnnouncementsClient 
+            announcements={announcements} 
+            filter={filter} 
+            page={page} 
+            totalPages={totalPages} 
+          />
+        ) : (
+          <div className="text-center py-20 bg-white/5 glass rounded-3xl border border-white/10">
+            <Bell size={40} className="text-white/30 mx-auto mb-4" />
+            <h3 className="text-lg font-display font-black uppercase text-white tracking-wider">No announcements found</h3>
+            <p className="text-white/40 text-sm mt-1">Try changing your filters or check back later.</p>
+          </div>
+        )}
+      </div>
+    </PageWrapper>
   )
 }

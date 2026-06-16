@@ -4,10 +4,18 @@
  * with complex joined queries. Type safety is enforced through explicit casts.
  */
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { createMockSupabaseClient } from './mockClient'
+import { isSupabaseConfigured } from './client'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createClient(): Promise<any> {
+  if (!isSupabaseConfigured()) {
+    const cookieStore = await cookies()
+    return createMockSupabaseClient(cookieStore)
+  }
+
   const cookieStore = await cookies()
 
   return createServerClient(
@@ -34,15 +42,20 @@ export async function createClient(): Promise<any> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createAdminClient(): Promise<any> {
-  const cookieStore = await cookies()
-  return createServerClient(
+  if (!isSupabaseConfigured()) {
+    const cookieStore = await cookies()
+    return createMockSupabaseClient(cookieStore)
+  }
+
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll() {},
-      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     }
   )
 }
+

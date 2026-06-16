@@ -2,10 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PaymentForm } from './PaymentForm'
 import type { Metadata } from 'next'
+import { PageWrapper } from '@/components/layout/PageWrapper'
 
 export const metadata: Metadata = {
-  title: 'Payment | Nova Unplugged 2025',
-  description: 'Submit your payment to confirm your registration for Nova Unplugged 2025.',
+  title: 'Payment | Nova Unplugged 2026',
+  description: 'Submit your payment to confirm your registration for Nova Unplugged 2026.',
 }
 
 export default async function PaymentPage() {
@@ -28,5 +29,16 @@ export default async function PaymentPage() {
     .limit(1)
     .maybeSingle()
 
-  return <PaymentForm userData={userData} submission={submission} userId={user.id} />
+  const paymentStatus = userData?.payment_status ?? 'pending'
+
+  return (
+    <PageWrapper 
+      title={paymentStatus === 'approved' ? '' : 'Complete Your'} 
+      titleHighlight={paymentStatus === 'approved' ? '' : 'Payment'} 
+      subtitle={paymentStatus === 'approved' ? '' : 'Pay via UPI and submit your UTR to confirm registration'}
+      maxWidth="md"
+    >
+      <PaymentForm userData={userData} submission={submission} userId={user.id} />
+    </PageWrapper>
+  )
 }

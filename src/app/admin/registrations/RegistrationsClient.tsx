@@ -3,19 +3,17 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Users, UserX, Trash2 } from 'lucide-react'
+import { Users, UserX, Trash2, ExternalLink, Download } from 'lucide-react'
 import { formatIST } from '@/lib/utils/dateUtils'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import type { CategoryRow } from '@/lib/supabase/types'
-import { kickUserFromEvent, adminDissolveTeam } from '@/actions/adminRegistrations'
+import { kickUserFromEvent, adminDissolveTeam, exportEventRegistrations } from '@/actions/adminRegistrations'
 
 interface RegistrationsClientProps {
   registrations: any[]
   categories: CategoryRow[]
   selectedCategory: string
-  page: number
-  totalPages: number
   totalCount: number
   uniqueStudentCount: number
   perEventCount: Record<string, number>
@@ -23,7 +21,7 @@ interface RegistrationsClientProps {
 }
 
 export function RegistrationsClient({
-  registrations, categories, selectedCategory, page, totalPages,
+  registrations, categories, selectedCategory,
   totalCount, uniqueStudentCount, perEventCount, adminRoleLevel
 }: RegistrationsClientProps) {
   const router = useRouter()
@@ -44,10 +42,8 @@ export function RegistrationsClient({
     byEvent[key].push(reg)
   }
 
-  const handleKickClick = (reg: any) => {
+  const handleKickClick = (reg: any, teamSize?: number) => {
     const teamId = reg.team_id || null
-    // Check if kicking would dissolve (simple check: team_id exists and members might drop)
-    // Full dissolve check happens server-side, but we surface the warning if team event
     setKickTarget({
       userId: reg.user_id,
       eventId: reg.event_id,
@@ -55,7 +51,8 @@ export function RegistrationsClient({
       eventTitle: (reg.events as any)?.title || 'Unknown',
       userName: (reg.users as any)?.full_name || 'Unknown',
     })
-    setKickWouldDissolve(false)
+    // Now that we load complete events, teamSize accurately reflects total team members
+    setKickWouldDissolve(teamSize === 1)
   }
 
   const confirmKick = (forceDissolve = false) => {
@@ -89,6 +86,35 @@ export function RegistrationsClient({
     })
   }
 
+  const [exportingEventId, setExportingEventId] = useState<string | null>(null)
+
+  const handleExportCSV = async (eventId: string, eventTitle: string) => {
+    setExportingEventId(eventId)
+    try {
+      const csvData = await exportEventRegistrations(eventId)
+      if (!csvData) {
+        alert("No registrations found for this event to export.")
+        setExportingEventId(null)
+        return
+      }
+
+      // Trigger download
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement("a")
+      const url = URL.createObjectURL(blob)
+      link.setAttribute("href", url)
+      link.setAttribute("download", `${eventTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_registrations.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (err: any) {
+      alert(`Export Failed: ${err.message}`)
+    } finally {
+      setExportingEventId(null)
+    }
+  }
+
   const catParam = selectedCategory !== 'all' ? `&category=${selectedCategory}` : ''
 
   return (
@@ -99,7 +125,7 @@ export function RegistrationsClient({
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div className="glass rounded-2xl p-5 border border-nova-primary/20 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-nova-primary/10 flex items-center justify-center shrink-0">
             <Users size={22} className="text-nova-primary" />
@@ -175,8 +201,23 @@ export function RegistrationsClient({
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-xs text-nova-muted">{categoryTitle}</span>
                     <span className="text-xs text-nova-primary font-medium">{perEventCount[eventId] || regs.length} registered</span>
+                    {ev?.is_submission_based && (
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 rounded ml-2">
+                        Submission Event
+                      </span>
+                    )}
                   </div>
                 </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  icon={<Download size={14} />} 
+                  loading={exportingEventId === eventId}
+                  onClick={() => handleExportCSV(eventId, eventTitle)}
+                  className="shrink-0"
+                >
+                  Export CSV
+                </Button>
               </div>
 
               {/* Individual registrations */}
@@ -189,6 +230,7 @@ export function RegistrationsClient({
                         <th className="text-left px-5 py-3 hidden sm:table-cell">Email</th>
                         <th className="text-left px-5 py-3">Type</th>
                         <th className="text-left px-5 py-3 hidden md:table-cell">Registered</th>
+                        {ev?.is_submission_based && <th className="text-left px-5 py-3">Link</th>}
                         {adminRoleLevel >= 4 && <th className="text-right px-5 py-3">Actions</th>}
                       </tr>
                     </thead>
@@ -199,6 +241,17 @@ export function RegistrationsClient({
                           <td className="px-5 py-3 text-nova-muted text-xs hidden sm:table-cell">{(reg.users as any)?.email}</td>
                           <td className="px-5 py-3"><span className="text-nova-muted text-xs">Individual</span></td>
                           <td className="px-5 py-3 text-nova-muted text-xs hidden md:table-cell">{formatIST(reg.created_at, 'MMM d, h:mm a')}</td>
+                          {ev?.is_submission_based && (
+                            <td className="px-5 py-3 text-xs">
+                              {reg.submission_link ? (
+                                <a href={reg.submission_link} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-nova-primary hover:underline">
+                                  <ExternalLink size={12} /> View
+                                </a>
+                              ) : (
+                                <span className="text-nova-muted/50">—</span>
+                              )}
+                            </td>
+                          )}
                           {adminRoleLevel >= 4 && (
                             <td className="px-5 py-3 text-right">
                               <Button variant="danger" size="sm" icon={<UserX size={13} />} onClick={() => handleKickClick(reg)}>Kick</Button>
@@ -217,8 +270,8 @@ export function RegistrationsClient({
                 const joinCode = (teamRegs[0]?.teams as any)?.join_code || ''
                 return (
                   <div key={teamId} className="border-t border-white/10">
-                    <div className="flex items-center justify-between px-5 py-3 bg-nova-primary/5">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 bg-nova-primary/5">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <span className="text-sm font-medium text-nova-primary">{teamName}</span>
                         <span className="text-[10px] font-mono bg-nova-primary/10 text-nova-primary px-1.5 py-0.5 rounded border border-nova-primary/20">{joinCode}</span>
                         <span className="text-xs text-nova-muted">{teamRegs.length} members</span>
@@ -235,22 +288,44 @@ export function RegistrationsClient({
                       )}
                     </div>
                     <table className="w-full text-sm">
+                      <thead className="border-b border-white/5">
+                        <tr className="text-nova-muted text-xs font-display tracking-wider uppercase">
+                          <th className="text-left px-4 sm:px-5 py-3 pl-4 sm:pl-8">Name</th>
+                          <th className="text-left px-4 sm:px-5 py-3 hidden sm:table-cell">Email</th>
+                          <th className="text-left px-4 sm:px-5 py-3 hidden md:table-cell">Registered</th>
+                          {ev?.is_submission_based && <th className="text-left px-4 sm:px-5 py-3">Link</th>}
+                          {adminRoleLevel >= 4 && <th className="text-right px-5 py-3">Actions</th>}
+                        </tr>
+                      </thead>
                       <tbody className="divide-y divide-white/5">
                         {teamRegs.map(reg => (
                           <tr key={reg.id} className="hover:bg-white/3 transition-colors">
-                            <td className="px-5 py-3 pl-8 text-nova-text flex items-center gap-2">
-                              {(reg.users as any)?.full_name}
-                              {reg.user_id === (teamRegs[0]?.teams as any)?.leader_id && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-nova-warning/20 text-nova-warning border border-nova-warning/30 uppercase tracking-tighter">
-                                  Leader
-                                </span>
-                              )}
+                            <td className="px-4 sm:px-5 py-3 pl-4 sm:pl-8 text-nova-text">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {(reg.users as any)?.full_name}
+                                {reg.user_id === (teamRegs[0]?.teams as any)?.leader_id && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-nova-warning/20 text-nova-warning border border-nova-warning/30 uppercase tracking-tighter">
+                                    Leader
+                                  </span>
+                                )}
+                              </div>
                             </td>
-                            <td className="px-5 py-3 text-nova-muted text-xs hidden sm:table-cell">{(reg.users as any)?.email}</td>
-                            <td className="px-5 py-3 text-nova-muted text-xs hidden md:table-cell">{formatIST(reg.created_at, 'MMM d, h:mm a')}</td>
+                            <td className="px-4 sm:px-5 py-3 text-nova-muted text-xs hidden sm:table-cell">{(reg.users as any)?.email}</td>
+                            <td className="px-4 sm:px-5 py-3 text-nova-muted text-xs hidden md:table-cell">{formatIST(reg.created_at, 'MMM d, h:mm a')}</td>
+                            {ev?.is_submission_based && (
+                              <td className="px-4 sm:px-5 py-3 text-xs">
+                                {reg.submission_link ? (
+                                  <a href={reg.submission_link} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-nova-primary hover:underline">
+                                    <ExternalLink size={12} /> View
+                                  </a>
+                                ) : (
+                                  <span className="text-nova-muted/50">—</span>
+                                )}
+                              </td>
+                            )}
                             {adminRoleLevel >= 4 && (
                               <td className="px-5 py-3 text-right">
-                                <Button variant="danger" size="sm" icon={<UserX size={13} />} onClick={() => handleKickClick(reg)}>Kick</Button>
+                                <Button variant="danger" size="sm" icon={<UserX size={13} />} onClick={() => handleKickClick(reg, teamRegs.length)}>Kick</Button>
                               </td>
                             )}
                           </tr>
@@ -269,27 +344,6 @@ export function RegistrationsClient({
           </div>
         )}
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 glass rounded-xl p-4 border border-white/10">
-          <p className="text-xs text-nova-muted">Page {page} of {totalPages}</p>
-          <div className="flex items-center gap-2">
-            <Link
-              href={page > 1 ? `/admin/registrations?page=${page - 1}${catParam}` : '#'}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium glass transition-all ${page === 1 ? 'opacity-50 pointer-events-none' : 'hover:bg-white/10'}`}
-            >
-              Previous
-            </Link>
-            <Link
-              href={page < totalPages ? `/admin/registrations?page=${page + 1}${catParam}` : '#'}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium glass transition-all ${page === totalPages ? 'opacity-50 pointer-events-none' : 'hover:bg-white/10'}`}
-            >
-              Next
-            </Link>
-          </div>
-        </div>
-      )}
 
       {/* Kick User Modal */}
       <Modal open={!!kickTarget} onClose={() => { setKickTarget(null); setKickWouldDissolve(false) }} size="sm" title="Remove User from Event">

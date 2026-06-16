@@ -75,7 +75,7 @@ export default async function AdminDashboard() {
     <div className="p-6 lg:p-8">
       <div className="mb-8">
         <h1 className="font-display font-bold text-3xl text-nova-text mb-1">Admin Dashboard</h1>
-        <p className="text-nova-text-dim text-sm">Nova Unplugged 2025 · {formatIST(new Date(), 'EEEE, MMMM d')}</p>
+        <p className="text-nova-text-dim text-sm">Nova Unplugged 2026 · {formatIST(new Date(), 'EEEE, MMMM d')}</p>
       </div>
 
       {/* KPI grid */}

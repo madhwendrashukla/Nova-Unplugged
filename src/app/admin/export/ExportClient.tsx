@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Download, FileText, Users, CreditCard, QrCode } from 'lucide-react'
+import { Download, FileText, Users, CreditCard, QrCode, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { createClient } from '@/lib/supabase/client'
 
@@ -31,7 +31,7 @@ const exportTypes = [
     color: 'text-nova-primary',
     bg: 'bg-nova-primary/10',
     border: 'border-nova-primary/30',
-    headers: ['full_name', 'email', 'phone', 'student_id', 'course', 'year', 'payment_status', 'entry_status', 'created_at'],
+    headers: ['full_name', 'email', 'phone', 'batch', 'city', 'state', 'zone', 'pincode', 'payment_status', 'entry_status', 'created_at'],
   },
   {
     id: 'registrations',
@@ -41,17 +41,17 @@ const exportTypes = [
     color: 'text-nova-accent',
     bg: 'bg-nova-accent/10',
     border: 'border-nova-accent/30',
-    headers: ['user_name', 'user_email', 'event_title', 'participation_type', 'team_name', 'team_code', 'registered_at'],
+    headers: ['user_name', 'user_email', 'phone', 'batch', 'city', 'state', 'zone', 'pincode', 'event_title', 'participation_type', 'team_name', 'team_code', 'registered_at'],
   },
   {
-    id: 'payments',
-    label: 'Payments',
-    desc: 'Payment submissions with UTR numbers and status',
-    icon: CreditCard,
+    id: 'allowed_users',
+    label: 'Allowed User List',
+    desc: 'List of all pre-approved emails allowed to register',
+    icon: Mail,
     color: 'text-nova-warning',
     bg: 'bg-nova-warning/10',
     border: 'border-nova-warning/30',
-    headers: ['user_name', 'user_email', 'utr_number', 'status', 'admin_note', 'created_at'],
+    headers: ['email', 'added_by_name', 'created_at'],
   },
   {
     id: 'scanner',
@@ -109,7 +109,7 @@ export function ExportClient() {
               <div className={`w-12 h-12 rounded-xl ${exp.bg} border ${exp.border} flex items-center justify-center mb-4`}>
                 <Icon size={22} className={exp.color} />
               </div>
-              <h3 className="font-display font-semibold text-nova-text mb-1">{exp.label}</h3>
+              <h3 className="font-bold text-lg text-nova-text mb-1">{exp.label}</h3>
               <p className="text-nova-text-dim text-sm mb-5">{exp.desc}</p>
               <Button
                 variant="outline"

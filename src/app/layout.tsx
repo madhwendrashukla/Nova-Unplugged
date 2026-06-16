@@ -1,27 +1,45 @@
 import type { Metadata } from "next";
-import { Inter, Orbitron } from "next/font/google";
+import { Space_Grotesk, Big_Shoulders_Display, Playfair_Display, Caveat } from "next/font/google";
 import "./globals.css";
+import DevPanel from "@/components/ui/DevPanel";
+import { GlobalNavigation } from "@/components/layout/GlobalNavigation";
 
-const inter = Inter({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-body",
   display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
-const orbitron = Orbitron({
+const bigShoulders = Big_Shoulders_Display({
   subsets: ["latin"],
-  variable: "--font-orbitron",
+  variable: "--font-display",
   display: "swap",
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  variable: "--font-handwritten",
+  display: "swap",
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Nova Unplugged 2025 | IIM Bangalore Annual Fest",
+  title: "Nova Unplugged 2026 | IIM Bangalore Annual Fest",
   description:
-    "Nova Unplugged is the annual college fest of IIM Bangalore — June 2025. Register now for cultural, technical, and sports events. Gamified entry, QR-based access, and 1000+ participants.",
-  keywords: ["IIM Bangalore", "college fest", "Nova Unplugged", "IIMB", "events 2025"],
+    "Nova Unplugged is the annual college fest of IIM Bangalore — June 2026. Register now for cultural, technical, and sports events. Gamified entry, QR-based access, and 1000+ participants.",
+  keywords: ["IIM Bangalore", "college fest", "Nova Unplugged", "IIMB", "events 2026"],
   openGraph: {
-    title: "Nova Unplugged 2025 | IIM Bangalore",
-    description: "The annual fest of IIM Bangalore. June 2025.",
+    title: "Nova Unplugged 2026 | IIM Bangalore",
+    description: "The annual fest of IIM Bangalore. June 2026.",
     type: "website",
   },
 };
@@ -32,9 +50,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${orbitron.variable}`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${bigShoulders.variable} ${playfair.variable} ${caveat.variable}`}>
       <body className="bg-nova-bg text-nova-text font-body antialiased">
+        <GlobalNavigation />
         {children}
+        <DevPanel />
       </body>
     </html>
   );

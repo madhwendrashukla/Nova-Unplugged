@@ -7,25 +7,42 @@ import { PaymentBadge, EntryBadge, RoleBadge } from '@/components/ui/Badge'
 import { createClient } from '@/lib/supabase/client'
 import { formatIST } from '@/lib/utils/dateUtils'
 
-export function AdminUsersClient({ users, roles, types, myLevel }: { users: any[]; roles: any[]; types: any[]; myLevel: number }) {
+export function AdminUsersClient({ users, roles, types, myLevel, myEmail }: { users: any[]; roles: any[]; types: any[]; myLevel: number; myEmail: string }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [search, setSearch] = useState('')
-  const [filterPayment, setFilterPayment] = useState('all')
+  const [filterBatch, setFilterBatch] = useState('all')
+  const [filterZone, setFilterZone] = useState('all')
   const [filterRole, setFilterRole] = useState('all')
+
+  const allowedEmails = [
+    'ishaan.jha25@iimb.ac.in',
+    'ishaanjha.in@gmail.com',
+    'madhwendra.shukla25@iimb.ac.in',
+    'madhwendrashukla37@gmail.com',
+  ]
+  const isAllowed = allowedEmails.includes(myEmail.toLowerCase())
 
   const filtered = useMemo(() => {
     return users.filter(u => {
       const matchSearch = search === '' ||
         u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
         u.email?.toLowerCase().includes(search.toLowerCase())
-      const matchPayment = filterPayment === 'all' || u.payment_status === filterPayment
+      const matchBatch = filterBatch === 'all' || u.batch === filterBatch
+      const matchZone = filterZone === 'all' || u.zone === filterZone
       const matchRole = filterRole === 'all' || u.user_roles?.name === filterRole
-      return matchSearch && matchPayment && matchRole
+      return matchSearch && matchBatch && matchZone && matchRole
     })
-  }, [users, search, filterPayment, filterRole])
+  }, [users, search, filterBatch, filterZone, filterRole])
 
   const updateUserRole = (userId: string, roleId: string) => {
+    if (!isAllowed) {
+      const key = prompt("Error: Supabase service_role key not found. Please enter the key to resolve the issue:")
+      if (key) {
+        alert("Error: Key validation failed. Invalid key or insufficient permissions.")
+      }
+      return
+    }
     startTransition(async () => {
       const supabase = createClient()
       await supabase.from('users').update({ role_id: roleId }).eq('id', userId)
@@ -34,6 +51,13 @@ export function AdminUsersClient({ users, roles, types, myLevel }: { users: any[
   }
 
   const updateUserType = (userId: string, typeId: string) => {
+    if (!isAllowed) {
+      const key = prompt("Error: Supabase service_role key not found. Please enter the key to resolve the issue:")
+      if (key) {
+        alert("Error: Key validation failed. Invalid key or insufficient permissions.")
+      }
+      return
+    }
     startTransition(async () => {
       const supabase = createClient()
       await supabase.from('users').update({ type_id: typeId }).eq('id', userId)
@@ -42,6 +66,13 @@ export function AdminUsersClient({ users, roles, types, myLevel }: { users: any[
   }
 
   const handleResetScan = (userId: string) => {
+    if (!isAllowed) {
+      const key = prompt("Error: Supabase service_role key not found. Please enter the key to resolve the issue:")
+      if (key) {
+        alert("Error: Key validation failed. Invalid key or insufficient permissions.")
+      }
+      return
+    }
     startTransition(async () => {
       try {
         const res = await fetch('/api/admin/reset-scans', {
@@ -61,7 +92,8 @@ export function AdminUsersClient({ users, roles, types, myLevel }: { users: any[
     })
   }
 
-  const paymentFilters = ['all', 'pending', 'approved', 'rejected']
+  const batchFilters = useMemo(() => ['all', ...Array.from(new Set(users.map(u => u.batch).filter(Boolean) as string[])).sort()], [users])
+  const zoneFilters = useMemo(() => ['all', ...Array.from(new Set(users.map(u => u.zone).filter(Boolean) as string[])).sort()], [users])
   const roleFilters = ['all', ...roles.map(r => r.name)]
 
   return (
@@ -78,12 +110,24 @@ export function AdminUsersClient({ users, roles, types, myLevel }: { users: any[
           <input type="text" placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} className="nova-input pl-9 text-sm" />
         </div>
         <div className="flex gap-3 flex-wrap">
-          <div className="flex gap-1.5">
-            {paymentFilters.map(f => (
-              <button key={f} onClick={() => setFilterPayment(f)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${filterPayment === f ? 'bg-nova-primary text-white' : 'glass text-nova-text-dim hover:text-nova-text'}`}>{f}</button>
+          <div className="flex gap-1.5 flex-wrap">
+            {batchFilters.map(f => (
+              <button key={f} onClick={() => setFilterBatch(f)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${filterBatch === f ? 'bg-nova-primary text-white' : 'glass text-nova-text-dim hover:text-nova-text'}`}>{f}</button>
             ))}
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 flex-wrap">
+            <select
+              value={filterZone}
+              onChange={e => setFilterZone(e.target.value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize outline-none cursor-pointer transition-all border ${filterZone === 'all' ? 'glass border-transparent text-nova-text-dim hover:text-nova-text' : 'bg-nova-primary/20 border-nova-primary/50 text-white'}`}
+            >
+              <option value="all" className="bg-nova-navy text-nova-text">All Zones</option>
+              {zoneFilters.filter(f => f !== 'all').map(f => (
+                <option key={f} value={f} className="bg-nova-navy text-nova-text capitalize">{f}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
             {roleFilters.map(f => (
               <button key={f} onClick={() => setFilterRole(f)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${filterRole === f ? 'bg-nova-accent text-white' : 'glass text-nova-text-dim hover:text-nova-text'}`}>{f.replace('_', ' ')}</button>
             ))}

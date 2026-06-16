@@ -1,7 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 async function getAuthUser() {
@@ -11,11 +10,8 @@ async function getAuthUser() {
   return { supabase, userId: user.id }
 }
 
-function getAdminClient() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+async function getAdminClient() {
+  return createAdminClient()
 }
 
 /**
@@ -23,7 +19,7 @@ function getAdminClient() {
  */
 export async function createJoinRequest(teamId: string) {
   const { userId } = await getAuthUser()
-  const admin = getAdminClient()
+  const admin = await getAdminClient()
 
   // Check team exists and is active
   const { data: team } = await admin.from('teams').select('id, event_id, status, is_open').eq('id', teamId).single()
@@ -64,7 +60,7 @@ export async function createJoinRequest(teamId: string) {
  */
 export async function respondToJoinRequest(requestId: string, action: 'accepted' | 'rejected') {
   const { supabase, userId } = await getAuthUser()
-  const admin = getAdminClient()
+  const admin = await getAdminClient()
 
   // Get the request with team and event details
   const { data: req, error: fetchErr } = await admin
@@ -108,12 +104,42 @@ export async function respondToJoinRequest(requestId: string, action: 'accepted'
 }
 
 /**
+ * Student cancels their own pending join request
+ */
+export async function cancelTeamJoinRequest(eventId: string) {
+  const { userId } = await getAuthUser()
+  const admin = await getAdminClient()
+
+  const teamIdsResult = await admin.from('teams').select('id').eq('event_id', eventId)
+  const teamIds = teamIdsResult.data?.map(t => t.id) || []
+
+  if (teamIds.length === 0) {
+    // If there are no teams for this event, there can't be any requests to cancel.
+    revalidatePath('/dashboard/events')
+    return
+  }
+
+  const { error } = await admin
+    .from('team_join_requests')
+    .delete()
+    .eq('user_id', userId)
+    .eq('status', 'pending')
+    .in('team_id', teamIds)
+
+  if (error) {
+    throw new Error('Failed to cancel join request: ' + error.message)
+  }
+
+  revalidatePath('/dashboard/events')
+}
+
+/**
  * Student withdraws from an event (individual or team)
  * If team withdrawal drops below min size → dissolve the team
  */
 export async function withdrawFromEvent(eventId: string) {
   const { userId } = await getAuthUser()
-  const admin = getAdminClient()
+  const admin = await getAdminClient()
 
   // Get registration
   const { data: reg } = await admin.from('registrations').select('*').eq('user_id', userId).eq('event_id', eventId).maybeSingle()
@@ -139,7 +165,7 @@ export async function withdrawFromEvent(eventId: string) {
         .select('user_id')
         .eq('team_id', reg.team_id)
         .neq('user_id', userId)
-        .order('created_at', { ascending: true })
+        .order('joined_at', { ascending: true })
         .limit(1)
         .maybeSingle()
       
@@ -187,7 +213,7 @@ export async function dissolveTeamInternal(teamId: string, adminClient: any) {
  * Check if withdrawal would dissolve the team (call this before withdrawFromEvent to show prompt)
  */
 export async function checkWithdrawalWouldDissolve(eventId: string, userId: string): Promise<boolean> {
-  const admin = getAdminClient()
+  const admin = await getAdminClient()
 
   const { data: reg } = await admin.from('registrations').select('team_id').eq('user_id', userId).eq('event_id', eventId).maybeSingle()
   if (!reg?.team_id) return false

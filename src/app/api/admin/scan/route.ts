@@ -46,13 +46,14 @@ export async function POST(request: NextRequest) {
     // 3. Find target user
     const { data: targetUser } = await supabaseAdmin
       .from('users')
-      .select('id, full_name, entry_status, payment_status')
+      .select('id, full_name, entry_status, payment_status, user_roles(name), user_types(name)')
       .eq('entry_code', code)
       .maybeSingle()
 
     let scanResult: 'valid' | 'already_scanned' | 'invalid'
     let message: string
-    let name: string | undefined = targetUser?.full_name
+    const roleText = (targetUser?.user_types as any)?.name || (targetUser?.user_roles as any)?.name
+    let name: string | undefined = targetUser?.full_name ? `${targetUser.full_name}${roleText ? ` (${roleText})` : ''}` : undefined
 
     // 4. Determine result
     if (!targetUser || targetUser.payment_status !== 'approved') {

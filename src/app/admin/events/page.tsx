@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { AdminEventsClient } from './AdminEventsClient'
@@ -15,10 +14,7 @@ export default async function AdminEventsPage() {
   const roleLevel = (userData?.user_roles as any)?.permissions_level ?? 1
   if (roleLevel < 3) redirect('/admin')
 
-  const admin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const admin = await createAdminClient()
 
   const [{ data: events }, { data: categories }] = await Promise.all([
     admin.from('events').select('*, categories(id, title, status)').order('created_at', { ascending: false }),

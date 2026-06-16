@@ -12,11 +12,8 @@ export async function clearScanLogs() {
   const roleLevel = (userData?.user_roles as any)?.permissions_level || 0
   if (roleLevel < 4) throw new Error('Forbidden')
 
-  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
-  const adminClient = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!.trim()
-  )
+  const { createAdminClient } = await import('@/lib/supabase/server')
+  const adminClient = await createAdminClient()
 
   // Supabase requires a filter for DELETE, so we use not-equal to a dummy UUID to match all rows
   const { error } = await adminClient.from('scanner_log').delete().neq('id', '00000000-0000-0000-0000-000000000000')

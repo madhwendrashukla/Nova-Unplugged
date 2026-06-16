@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    if (!type || !['users', 'registrations', 'payments', 'scanner'].includes(type)) {
+    if (!type || !['users', 'registrations', 'allowed_users', 'scanner'].includes(type)) {
       return NextResponse.json({ error: 'Invalid export type.' }, { status: 400 })
     }
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     if (type === 'users') {
       const { data, error } = await supabaseAdmin
         .from('users')
-        .select('full_name, email, phone, student_id, course, year, payment_status, entry_status, created_at')
+        .select('full_name, email, phone, batch, city, state, zone, pincode, payment_status, entry_status, created_at')
         .order('created_at')
       if (error) throw error
       exportData = data || []
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       const teamMap: Record<string, any> = {}
 
       if (userIds.size > 0) {
-        const { data } = await supabaseAdmin.from('users').select('id, full_name, email').in('id', Array.from(userIds))
+        const { data } = await supabaseAdmin.from('users').select('id, full_name, email, phone, batch, city, state, zone, pincode').in('id', Array.from(userIds))
         data?.forEach(u => userMap[u.id] = u)
       }
       if (eventIds.size > 0) {
@@ -92,6 +92,12 @@ export async function GET(request: NextRequest) {
       exportData = (regs || []).map((r: any) => ({
         user_name: userMap[r.user_id]?.full_name || '',
         user_email: userMap[r.user_id]?.email || '',
+        phone: userMap[r.user_id]?.phone || '',
+        batch: userMap[r.user_id]?.batch || '',
+        city: userMap[r.user_id]?.city || '',
+        state: userMap[r.user_id]?.state || '',
+        zone: userMap[r.user_id]?.zone || '',
+        pincode: userMap[r.user_id]?.pincode || '',
         event_title: eventMap[r.event_id]?.title || '',
         participation_type: eventMap[r.event_id]?.participation_type || '',
         team_name: teamMap[r.team_id]?.name || '',
@@ -99,38 +105,19 @@ export async function GET(request: NextRequest) {
         registered_at: r.created_at,
       }))
     } 
-    else if (type === 'payments') {
-      const { data: payments, error } = await supabaseAdmin
-        .from('payment_submissions')
-        .select('utr_number, status, admin_note, created_at, user_id')
+    else if (type === 'allowed_users') {
+      const { data: allowedUsers, error } = await supabaseAdmin
+        .from('allowed_emails')
+        .select('email, created_at, users!added_by(full_name)')
         .order('created_at')
       if (error) throw error
 
-      const userIds = new Set<string>()
-      payments?.forEach(p => { if (p.user_id) userIds.add(p.user_id) })
-      
-      const userNames: Record<string, any> = {}
-      if (userIds.size > 0) {
-        const { data: usersData } = await supabaseAdmin
-          .from('users')
-          .select('id, full_name, email')
-          .in('id', Array.from(userIds))
-        if (usersData) {
-          usersData.forEach(u => {
-            userNames[u.id] = u
-          })
-        }
-      }
-
-      exportData = (payments || []).map((p: any) => ({
-        user_name: userNames[p.user_id]?.full_name || '',
-        user_email: userNames[p.user_id]?.email || '',
-        utr_number: p.utr_number || '',
-        status: p.status || '',
-        admin_note: p.admin_note || '',
-        created_at: p.created_at,
+      exportData = (allowedUsers || []).map((u: any) => ({
+        email: u.email || '',
+        added_by_name: (u.users as any)?.full_name || 'Admin',
+        created_at: u.created_at,
       }))
-    } 
+    }
     else if (type === 'scanner') {
       // First fetch all logs
       const { data: logs, error: logsError } = await supabaseAdmin

@@ -25,16 +25,15 @@ type EventFormData = {
   venue: string
   event_date: string
   start_time: string
-  end_time: string
   deadline: string
+  submission_link: string
   is_active: boolean
 }
 
 const emptyForm: EventFormData = {
   title: '', description: '', category_id: '', participation_type: 'individual',
   team_size_min: '2', team_size_max: '5', rulebook_url: '', organizer_name: '',
-  organizer_contact: '', group_join_link: '', venue: '',
-  event_date: '', start_time: '', end_time: '', deadline: '', is_active: true,
+  event_date: '', start_time: '', end_time: '', deadline: '', submission_link: '', is_active: true,
 }
 
 interface AdminEventsClientProps {
@@ -85,6 +84,7 @@ export function AdminEventsClient({ events, categories, creatorId }: AdminEvents
       start_time: event.start_time || '',
       end_time: event.end_time || '',
       deadline: event.deadline ? new Date(event.deadline).toISOString().slice(0, 16) : '',
+      submission_link: event.submission_link || '',
       is_active: event.is_active,
     })
     setBannerFile(null)
@@ -132,6 +132,7 @@ export function AdminEventsClient({ events, categories, creatorId }: AdminEvents
         start_time: form.start_time || null,
         end_time: form.end_time || null,
         deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
+        submission_link: form.submission_link || null,
         is_active: form.is_active,
         created_by: creatorId,
       }
@@ -285,6 +286,7 @@ export function AdminEventsClient({ events, categories, creatorId }: AdminEvents
             <Input label="Organizer Contact" placeholder="phone or email" value={form.organizer_contact} onChange={set('organizer_contact')} />
             <Input label="WhatsApp / Telegram Group Link" value={form.group_join_link} onChange={set('group_join_link')} className="sm:col-span-2" />
             <Input label="Rulebook URL" placeholder="https://..." value={form.rulebook_url} onChange={set('rulebook_url')} className="sm:col-span-2" />
+            <Input label="Submission Link" placeholder="Google/Microsoft Form Link" value={form.submission_link} onChange={set('submission_link')} className="sm:col-span-2" />
           </div>
 
           <Textarea label="Description" value={form.description} onChange={set('description')} className="min-h-[120px]" />

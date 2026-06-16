@@ -143,6 +143,7 @@ export interface Database {
           start_time: string | null
           end_time: string | null
           deadline: string | null
+          submission_link: string | null
           is_active: boolean
           created_by: string | null
           created_at: string
@@ -165,6 +166,7 @@ export interface Database {
           start_time?: string | null
           end_time?: string | null
           deadline?: string | null
+          submission_link?: string | null
           is_active?: boolean
           created_by?: string | null
           created_at?: string
@@ -186,6 +188,7 @@ export interface Database {
           start_time?: string | null
           end_time?: string | null
           deadline?: string | null
+          submission_link?: string | null
           is_active?: boolean
         }
       }

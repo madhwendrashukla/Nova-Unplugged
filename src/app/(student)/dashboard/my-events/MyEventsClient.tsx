@@ -115,17 +115,29 @@ export function MyEventsClient({ registrations, userId }: MyEventsClientProps) {
                   </div>
                 </div>
 
-                {/* Group join link */}
-                {event?.group_join_link && (
-                  <a
-                    href={event.group_join_link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-xs text-nova-accent hover:text-nova-accent-light transition-colors mb-4"
-                  >
-                    <ExternalLink size={12} /> Join WhatsApp / Telegram Group
-                  </a>
-                )}
+                {/* Action Links */}
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                  {event?.group_join_link && (
+                    <a
+                      href={event.group_join_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-xs text-nova-accent hover:text-nova-accent-light transition-colors"
+                    >
+                      <ExternalLink size={12} /> Join WhatsApp / Telegram Group
+                    </a>
+                  )}
+                  {event?.submission_link && (
+                    <a
+                      href={event.submission_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-nova-primary text-black hover:bg-nova-primary/90 transition-colors shadow-lg"
+                    >
+                      <ExternalLink size={12} /> Submission Link
+                    </a>
+                  )}
+                </div>
 
                 {/* Team info */}
                 {team && (

@@ -697,17 +697,35 @@ export function EventsClient({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
             <div
-              className="w-full h-full relative transition-all duration-500 hover:scale-[1.02] hover:z-30 cursor-pointer"
+              className="w-full h-full relative transition-all duration-500 hover:scale-[1.02] hover:-translate-y-2 hover:z-30 cursor-pointer group"
               onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLSdE-wcWd8zEH4tJ16RERVC3HIiPPeRf3AVKPfoHeFYnmE_ZnA/viewform?usp=publish-editor', '_blank')}
             >
-              <PinnedCard pinColor="orange" className="h-full min-h-[250px] flex flex-col justify-center items-center text-center p-6 gap-4">
-                <span className="text-5xl">📷</span>
-                <h3 className="font-display font-black text-xl uppercase tracking-wider text-white leading-tight">
-                  Through the Lens : Photography Submission
-                </h3>
-                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#E8A020] transition-all duration-300 uppercase tracking-widest mt-2">
-                  Submit Now <ExternalLink size={14} />
-                </span>
+              <PinnedCard pinColor="orange" className="h-full min-h-[350px] flex flex-col justify-between items-center text-center p-8 bg-[#0a0a0a]/80 backdrop-blur-md border border-[#E8A020]/20 shadow-[0_0_30px_rgba(232,160,32,0.05)] group-hover:shadow-[0_0_50px_rgba(232,160,32,0.2)] group-hover:border-[#E8A020]/50 transition-all duration-500 relative overflow-hidden">
+                {/* Decorative glows */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-1/2 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#E8A020]/20 via-transparent to-transparent blur-2xl pointer-events-none transition-opacity duration-500 opacity-50 group-hover:opacity-100" />
+                
+                <div className="flex-1 flex flex-col items-center justify-center gap-6 w-full relative z-10 pt-4">
+                  <div className="w-24 h-24 bg-gradient-to-br from-[#E8A020] to-[#b37a14] rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(232,160,32,0.4)] group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 border-4 border-black/50">
+                    <span className="text-5xl drop-shadow-md">📸</span>
+                  </div>
+                  
+                  <div className="space-y-2 mt-2">
+                    <p className="text-[#E8A020] text-xs font-black uppercase tracking-[0.3em] drop-shadow-[0_0_10px_rgba(232,160,32,0.5)]">Competition</p>
+                    <h3 className="font-display font-black text-3xl uppercase tracking-wider text-white leading-tight">
+                      Through The Lens
+                    </h3>
+                    <p className="text-white/50 text-xs font-bold uppercase tracking-widest">
+                      Photography Submission
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-full relative z-10 mt-8">
+                  <div className="w-full h-px bg-gradient-to-r from-transparent via-[#E8A020]/30 to-transparent mb-6 group-hover:via-[#E8A020]/60 transition-colors duration-500" />
+                  <span className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-gradient-to-r from-[#E8A020]/10 to-[#F0A500]/10 border border-[#E8A020]/30 text-sm font-black text-[#E8A020] transition-all duration-300 uppercase tracking-widest group-hover:bg-[#E8A020] group-hover:text-[#0a0a0a] group-hover:shadow-[0_0_20px_rgba(232,160,32,0.4)]">
+                    Submit Now <ExternalLink size={16} className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+                  </span>
+                </div>
               </PinnedCard>
             </div>
           </div>
